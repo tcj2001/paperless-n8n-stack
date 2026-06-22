@@ -141,10 +141,8 @@ services:
     image: postgres:16
     restart: unless-stopped
     container_name: postgres-n8n
-    environment:
-      - POSTGRES_USER=n8n
-      - POSTGRES_PASSWORD=n8n_secure_password_here
-      - POSTGRES_DB=n8n
+    env_file:
+      - ./postgres-n8n/.env  
     volumes:
       - ./postgres-n8n/data:/var/lib/postgresql/data
 
