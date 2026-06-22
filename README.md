@@ -1,13 +1,14 @@
 # Paperless Stack
 
 Docker Compose stack for running Paperless-ngx with optional local AI capabilities.
+This exactly same as the original authors setup, i just added n8n, in case I plan to use it
 
 ## Quick Start
 
 1. **Clone and configure**
 
    ```bash
-   git clone https://github.com/timothystewart6/paperless-stack.git
+   git clone https://github.com/tcj2001/paperless-n8n-stack.git
    cd paperless-stack
    ```
 
