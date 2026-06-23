@@ -30,6 +30,9 @@ Configure docker to use nvidia
 sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 
+To remove and reinstall
+docker system prune -a --volumes
+
 1. **Clone and configure**
 
    ```bash
