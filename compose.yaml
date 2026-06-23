@@ -7,7 +7,7 @@ services:
     env_file: 
       - ./paperless/.env
     depends_on:
-      - postgres
+      - postgres-paperless
       - redis
       - gotenberg
       - tika
