@@ -34,7 +34,7 @@ sudo systemctl restart docker
 
    ```bash
    git clone https://github.com/tcj2001/paperless-n8n-stack.git
-   cd paperless-stack
+   cd paperless-n8n-stack
    ```
 
 2. **Edit environment files**
