@@ -27,7 +27,7 @@ services:
     env_file: 
       - ./postgres-paperless/.env
     volumes:
-      - ./postgres-paperless/data:/var/lib/postgresql/data
+      - ./postgres-paperless/data:/var/lib/postgresql
   
   # redis database for paperless-ngx
   redis:
@@ -144,7 +144,7 @@ services:
     env_file:
       - ./postgres-n8n/.env  
     volumes:
-      - ./postgres-n8n/data:/var/lib/postgresql/data
+      - ./postgres-n8n/data:/var/lib/postgresql
 
   # n8n workflow automation service
   n8n:
