@@ -23,7 +23,7 @@ services:
   postgres:
     image: postgres:18
     restart: unless-stopped
-    container_name: postgres
+    container_name: postgres-paperless
     env_file: 
       - ./postgres/.env
     volumes:
