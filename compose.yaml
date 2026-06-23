@@ -165,10 +165,8 @@ services:
     image: lscr.io/linuxserver/syncthing:latest
     container_name: syncthing
     hostname: ubuntu-syncthing
-    environment:
-      - PUID=1000 # Run as your Ubuntu user ID to avoid folder permission errors
-      - PGID=1000 # Run as your Ubuntu group ID
-      - TZ=America/Chicago
+    env_file:
+      - ./syncthing/.env      
     volumes:
       - ./syncthing/config:/config # Where Syncthing stores its database
       - ./paperless/consume:/usr/src/paperless/consume
