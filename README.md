@@ -11,6 +11,7 @@ curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
 Nvidia driver install
+
 sudo ubuntu-drivers autoinstall
 or
 apt install nvidia-utils-595-server
@@ -19,6 +20,7 @@ check
 nvidia-smi
 
 Install Nvidia Toolkit
+
 curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
   && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
     sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
@@ -27,10 +29,13 @@ sudo apt-get update
 sudo apt-get install -y nvidia-container-toolkit
 
 Configure docker to use nvidia
+
 sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 
 To remove and reinstall
+
+docker stop $(docker ps -q)
 docker system prune -a --volumes
 
 1. **Clone and configure**
