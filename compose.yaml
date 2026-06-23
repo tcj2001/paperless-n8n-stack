@@ -138,7 +138,7 @@ services:
 
  # postgres database dedicated to n8n
   postgres-n8n:
-    image: postgres:16
+    image: postgres:18
     restart: unless-stopped
     container_name: postgres-n8n
     env_file:
