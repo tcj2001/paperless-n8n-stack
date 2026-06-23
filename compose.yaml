@@ -159,3 +159,22 @@ services:
       - ./n8n/.env      
     volumes:
       - ./n8n/data:/home/node/.n8n
+
+  # syncthing service
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    hostname: ubuntu-syncthing
+    environment:
+      - PUID=1000 # Run as your Ubuntu user ID to avoid folder permission errors
+      - PGID=1000 # Run as your Ubuntu group ID
+      - TZ=America/Chicago
+    volumes:
+      - ./syncthing/config:/config # Where Syncthing stores its database
+      - ./paperless/consume:/usr/src/paperless/consume
+    ports:
+      - 8384:8384      # Web UI port
+      - 22000:22000/tcp # Data sync listening port (TCP)
+      - 22000:22000/udp # Data sync listening port (UDP)
+      - 21027:21027/udp # Local network discovery protocol
+    restart: unless-stopped      
