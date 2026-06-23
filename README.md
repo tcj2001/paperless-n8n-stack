@@ -43,7 +43,6 @@ docker system prune -a --volumes
    ```bash
    git clone https://github.com/tcj2001/paperless-n8n-stack.git
    cd paperless-n8n-stack
-   sudo chown -R 1000:1000 ./n8n/data
    ```
 
 2. **Edit environment files**
