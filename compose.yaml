@@ -1,4 +1,4 @@
-ssservices:
+services:
   # paperless-ngx main service
   paperless:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
