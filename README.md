@@ -52,6 +52,7 @@ This exactly same as the original authors setup, i just added n8n, in case I pla
 | Paperless-AI | <http://localhost:3000> |
 | Paperless-GPT | <http://localhost:3002> |
 | n8n | <http://localhost:3003> |
+| syncthing | <http://localhost:8384> |
 | Dozzle (logs) | <http://localhost:8080> |
 
 
