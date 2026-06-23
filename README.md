@@ -1,7 +1,8 @@
 # Paperless Stack
 
 Docker Compose stack for running Paperless-ngx with optional local AI capabilities.
-This exactly same as the original authors setup, i just added n8n, in case I plan to use it
+
+This exactly same as the original authors setup, i just added n8n and syncthing, in case I plan to use it
 
 ## Quick Start
 
