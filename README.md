@@ -21,7 +21,9 @@ apt install nvidia-utils-595-server
 ```
 
 check
+```bash
 nvidia-smi
+```
 
 Install Nvidia Toolkit
 ```bash
