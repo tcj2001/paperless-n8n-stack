@@ -153,3 +153,19 @@ This stack is built using these awesome open-source projects:
 - **[Dozzle](https://github.com/amir20/dozzle)** - Real-time log viewer for Docker
 
 Special thanks to the maintainers and contributors of these projects for making self-hosted document management and local AI accessible.
+
+##Trouble shooting
+Clear paperless-ngx
+```bash
+docker exec -it paperless-ngx python3 manage.py shell
+from documents.models import Document
+Document.objects.all().delete()
+exit()
+```
+
+Start processing consume folder in paperless-ngx
+```bash
+docker exec -it paperless-ngx python3 manage.py document_consumer
+```
+
+
