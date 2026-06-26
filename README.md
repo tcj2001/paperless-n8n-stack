@@ -176,4 +176,8 @@ add back .env in /postgress-paperless
 docker compose up -d
 ```
 
+Force recrate
+```bash
+docker compose up -d --force-recreate paperless-ai
+```
 
