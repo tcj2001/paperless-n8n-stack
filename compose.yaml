@@ -38,6 +38,7 @@ services:
       - ./redis/.env
     volumes:
       - ./redis/data:/data
+    command: redis-server --stop-writes-on-bgsave-error no
   
   # gotenberg service that paperless uses for document conversion
   gotenberg:
