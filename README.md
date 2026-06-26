@@ -168,4 +168,12 @@ Start processing consume folder in paperless-ngx
 docker exec -it paperless-ngx python3 manage.py document_consumer
 ```
 
+Delete postgress-paperless database
+```bash
+docker compose down
+sudo rm -rf ./postgres-paperless
+add back .env in /postgress-paperless
+docker compose up -d
+```
+
 
