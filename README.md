@@ -120,6 +120,7 @@ This stack is built using these awesome open-source projects:
 Special thanks to the maintainers and contributors of these projects for making self-hosted document management and local AI accessible.
 
 ##Trouble shooting
+
 Clear paperless-ngx
 ```bash
 docker exec -it paperless-ngx python3 manage.py shell
