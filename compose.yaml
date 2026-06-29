@@ -15,9 +15,9 @@ services:
       - "8000:8000"
     volumes:
       - ./paperless/data:/usr/src/paperless/data
-      - ./paperless/media:/usr/src/paperless/media
-      - ./paperless/export:/usr/src/paperless/export
-      - ./paperless/consume:/usr/src/paperless/consume
+      - /mnt/nas/media:/usr/src/paperless/media
+      - /mnt/nas/export:/usr/src/paperless/export
+      - /mnt/nas/consume:/usr/src/paperless/consume
   
   # postgres database for paperless-ngx
   postgres-paperless:
@@ -142,7 +142,7 @@ services:
 
   # n8n workflow automation service
   n8n:
-    image: docker.io/n8nio/n8n:latest
+    image: n8nio/n8n:latest
     container_name: n8n
     user: root
     restart: unless-stopped
@@ -155,6 +155,18 @@ services:
     volumes:
       - ./n8n/data:/home/node/.n8n
 
+  #n8n python runner
+  n8n-runners:
+    image: n8n-runner:custom
+    container_name: n8n-runners
+    working_dir: /opt/runners/task-runner-python
+    env_file:
+      - ./n8n-runners/.env
+    volumes:
+      - ./n8n-runners/n8n-task-runners.json:/etc/n8n-task-runners.json
+    depends_on:
+      - n8n
+
   # syncthing service
   syncthing:
     image: lscr.io/linuxserver/syncthing:latest
@@ -164,10 +176,11 @@ services:
       - ./syncthing/.env      
     volumes:
       - ./syncthing/config:/config # Where Syncthing stores its database
-      - ./paperless/consume:/usr/src/paperless/consume
+      - /mnt/nas/consume:/usr/src/paperless/consume
     ports:
       - 8384:8384      # Web UI port
       - 22000:22000/tcp # Data sync listening port (TCP)
       - 22000:22000/udp # Data sync listening port (UDP)
       - 21027:21027/udp # Local network discovery protocol
     restart: unless-stopped      
+
