@@ -6,47 +6,6 @@ This exactly same as the original authors setup, i just added n8n and syncthing,
 
 ## Quick Start
 
-Docker install
-```bash
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-```
-
-Nvidia driver install
-
-```bash
-sudo ubuntu-drivers autoinstall
-or
-apt install nvidia-utils-595-server
-```
-
-check
-```bash
-nvidia-smi
-```
-
-Install Nvidia Toolkit
-```bash
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
-  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
-    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
-    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-sudo apt-get update
-sudo apt-get install -y nvidia-container-toolkit
-```
-
-Configure docker to use nvidia
-```bash
-sudo nvidia-ctk runtime configure --runtime=docker
-sudo systemctl restart docker
-```
-
-To remove and reinstall
-```bash
-docker stop $(docker ps -q)
-docker system prune -a --volumes
-```
-
 1. **Clone and configure**
 
    ```bash
@@ -62,12 +21,15 @@ docker system prune -a --volumes
    - Other service `.env` files as needed
 
 3. **Start the stack**
-
+   for n8n-runner custom build (using Dokerfile and extras.txt)
+   ```bash
+   docker build -t n8n-runner:custom .
+   ```
    ```bash
    docker compose up -d
+   or
+   docker compose down && docker compose up -d
    ```
-
-4. **Create admin account**
 
    Open <http://localhost:8000> and create your Paperless admin account.
 
@@ -179,5 +141,45 @@ docker compose up -d
 Force recrate
 ```bash
 docker compose up -d --force-recreate paperless-ai
+```
+
+Docker install
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+Nvidia driver install
+```bash
+sudo ubuntu-drivers autoinstall
+or
+apt install nvidia-utils-595-server
+```
+
+check gpus
+```bash
+nvidia-smi
+```
+
+Install Nvidia Toolkit
+```bash
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+```
+
+Configure docker to use nvidia
+```bash
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo systemctl restart docker
+```
+
+To remove and reinstall
+```bash
+docker stop $(docker ps -q)
+docker system prune -a --volumes
 ```
 
