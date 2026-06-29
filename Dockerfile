@@ -1,9 +1,11 @@
-FROM n8nio/runners:1.111.0
+FROM n8nio/runners:latest
 
-COPY extras.txt /app/task-runner-python/extras.txt
+USER root
 
-RUN set -e; \
-    PY_BIN="/opt/runners/task-runner-python/.venv/bin/python"; \
-    if [ ! -x "$PY_BIN" ]; then PY_BIN="$(command -v python3)"; fi; \
-    "$PY_BIN" -m ensurepip --upgrade; \
-    "$PY_BIN" -m pip install --no-cache-dir -r /app/task-runner-python/extras.txt
+# Cleaned up line continuations and switched to the 'uv' binary
+RUN cp -r /opt/runners/task-runner-python/.venv/lib/python*/site-packages/src /tmp/src_backup \
+    && uv pip install --python /opt/runners/task-runner-python/.venv ollama requests \
+    && cp -r /tmp/src_backup /opt/runners/task-runner-python/.venv/lib/python*/site-packages/src \
+    && rm -rf /tmp/src_backup
+
+USER runner
