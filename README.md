@@ -17,7 +17,7 @@ This exactly same as the original authors setup, i just added n8n and syncthing,
 
    Update passwords and secrets in each service's `.env` file:
    - `./paperless/.env` - Paperless configuration
-   - `./postgres/.env` - Database credentials (must match Paperless config)
+   - `./postgres-n8n/.env` - Database credentials (must match Paperless config)
    - Other service `.env` files as needed
 
 3. **Start the stack**
