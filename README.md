@@ -21,10 +21,13 @@ This exactly same as the original authors setup, i just added n8n and syncthing,
    - Other service `.env` files as needed
 
 3. **Start the stack**
+   
    for n8n-runner custom build (using Dokerfile and extras.txt)
    ```bash
    docker build -t n8n-runner:custom .
    ```
+
+   start/re-start containers
    ```bash
    docker compose up -d
    or
