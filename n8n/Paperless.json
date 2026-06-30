@@ -1,0 +1,817 @@
+{
+  "name": "Paperless",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3d0f4be2-b9c7-4e6b-b67e-706a8f91b4da",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -3328,
+        256
+      ],
+      "id": "97d1b0d1-e458-442b-936b-f93592064efd",
+      "name": "Webhook",
+      "webhookId": "3d0f4be2-b9c7-4e6b-b67e-706a8f91b4da"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ad12ca29-a678-4f5a-9f30-2f2f8052aaea",
+              "name": "body.doc_url",
+              "value": "={{ $json.body.doc_url.split('/').filter(Boolean).pop() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3104,
+        256
+      ],
+      "id": "6157c83d-ffd0-4775-9a23-f0440cf27233",
+      "name": "Get Id"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "llama3.2:3b",
+          "mode": "list",
+          "cachedResultName": "llama3.2:3b"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "`You are a personalized document analyzer. Your task is to analyze documents and extract relevant information.\n\nAnalyze the document content and extract the following information into a structured JSON object:\n\n1. title: Create a concise, meaningful title for the document\n2. correspondent: Identify the sender/institution but do not include addresses\n3. tags: Select up to 4 relevant thematic tags\n4. document_date: Extract the document date (format: YYYY-MM-DD)\n5. document_type: Determine a precise type that classifies the document (e.g. Invoice, Contract, Employer, Information and so on)\n6. language: Determine the document language (e.g. \"de\" or \"en\")\n      \nImportant rules for the analysis:\n\nFor tags:\n- FIRST check the existing tags before suggesting new ones\n- Use only relevant categories\n- Maximum 4 tags per document, less if sufficient (at least 1)\n- Avoid generic or too specific tags\n- Use only the most important information for tag creation\n- The output language is the one used in the document! IMPORTANT!\n\nFor the title:\n- Short and concise, NO ADDRESSES\n- Contains the most important identification features\n- For invoices/orders, mention invoice/order number if available\n- The output language is the one used in the document! IMPORTANT!\n\nFor the correspondent:\n- Identify the sender or institution\n- When generating the correspondent, always create the shortest possible form of the company name (e.g. \"Amazon\" instead of \"Amazon EU SARL, German branch\")\n\nFor the document date:\n- Extract the date of the document\n- Use the format YYYY-MM-DD\n- If multiple dates are present, use the most relevant one\n\nFor the language:\n- Determine the document language\n- Use language codes like \"de\" for German or \"en\" for English\n- If the language is not clear, use \"und\" as a placeholder\n\nDo not include any conversational text, markdown block formatting (like ```json), or notes. Output ONLY the raw JSON object"
+            },
+            {
+              "content": "={{ $json.results[0].content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.ollama",
+      "typeVersion": 1,
+      "position": [
+        -2656,
+        256
+      ],
+      "id": "ea9c5c4b-224c-44af-ab75-f6c11584055e",
+      "name": "Process Document content",
+      "credentials": {
+        "ollamaApi": {
+          "id": "flsylBwq8O92F35P",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2304,
+        256
+      ],
+      "id": "368cf33c-4d86-4955-beaa-134e52ae0114",
+      "name": "json string to json"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tagResults = $('List all tags').first().json.results || [];\n\nconst tagToIdMap = tagResults.reduce((acc, tag) => {\n  if (tag.name) {\n    // Safely turn the existing tag name to lowercase for a reliable match\n    acc[tag.name.toLowerCase().trim()] = tag.id;\n  }\n  return acc;\n}, {});\n\nconst typeResults = $('List all types').first().json.results || [];\nconst typeToIdMap = typeResults.reduce((acc, type) => {\n  if (type.name) {\n    // Safely turn the existing tag name to lowercase for a reliable match\n    acc[type.name.toLowerCase().trim()] = type.id;\n  }\n  return acc;\n}, {});\n\nconst correspondentResults = $('List all correspondents').first().json.results || [];\nconst correspondentToIdMap = correspondentResults.reduce((acc, correspondent) => {\n  if (correspondent.name) {\n    // Safely turn the existing tag name to lowercase for a reliable match\n    acc[correspondent.name.toLowerCase().trim()] = correspondent.id;\n  }\n  return acc;\n}, {});\n\nconst mainInputJson = $('json string to json').first().json || {};\nconst documentId = $('Get Id').first().json.body.doc_url;\n\nconst targetTags = mainInputJson.tags || [];\nconst foundTagIds = [];\nconst missingTagNames = [];\nfor (const tagName of targetTags) {\n  const normalizedTag = tagName.toLowerCase().trim();\n  const existingTagId = tagToIdMap[normalizedTag];\n  \n  if (existingTagId !== undefined) {\n    foundTagIds.push(existingTagId);\n  } else {\n    missingTagNames.push(tagName.trim());\n  }\n}\n\nconst targetType = mainInputJson.document_type || \"\";\nconst foundTypeIds = [];\nconst missingTypeNames = [];\nconst normalizedType = targetType.toLowerCase().trim();\nconst existingTypeId = typeToIdMap[normalizedType];\nif (existingTypeId !== undefined) {\n  foundTypeIds.push(existingTypeId);\n} else {\n  missingTypeNames.push(targetType.trim());\n}\n\nconst targetCorrespondent = mainInputJson.correspondent || \"\";\nconst foundCorrespondentIds = [];\nconst missingCorrespondentNames = [];\nconst normalizedCorrespondent = targetCorrespondent.toLowerCase().trim();\nconst existingCorrespondentId = correspondentToIdMap[normalizedCorrespondent];\nif (existingCorrespondentId !== undefined) {\n  foundCorrespondentIds.push(existingCorrespondentId);\n} else {\n  missingCorrespondentNames.push(targetCorrespondent.trim());\n}\n\nreturn {\n  json: {\n    id: documentId,\n    ...mainInputJson,\n    matched_tag_ids: foundTagIds,\n    tags_to_create: missingTagNames,\n    matched_type_ids : foundTypeIds,\n    type_to_create: missingTypeNames,\n    matched_correspondent_ids : foundCorrespondentIds,\n    correspondent_to_create: missingCorrespondentNames,\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1408,
+        256
+      ],
+      "id": "af39e4e8-d827-4fdb-852b-5368a7cdbf3d",
+      "name": "Map",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "id": {
+          "__rl": true,
+          "value": "={{ $json.body.doc_url }}",
+          "mode": "id"
+        }
+      },
+      "type": "@mephistojb/n8n-nodes-paperless.paperless",
+      "typeVersion": 2,
+      "position": [
+        -2880,
+        256
+      ],
+      "id": "2b86af21-8fbf-41c9-b0fd-17a2fb69f8cf",
+      "name": "Get a document",
+      "credentials": {
+        "paperlessApi": {
+          "id": "HcMXTEu3nXsVbbHx",
+          "name": "Paperless-ngx account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "document_type",
+        "operation": "create",
+        "name": "={{ $json.type_to_create.length > 0 ? $json.type_to_create : null}}"
+      },
+      "type": "@mephistojb/n8n-nodes-paperless.paperless",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        176
+      ],
+      "id": "29c80652-2313-4c80-a141-4c0899cb6b30",
+      "name": "Create a new type",
+      "alwaysOutputData": true,
+      "credentials": {
+        "paperlessApi": {
+          "id": "HcMXTEu3nXsVbbHx",
+          "name": "Paperless-ngx account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "correspondent",
+        "operation": "create",
+        "name": "={{ $json.correspondent_to_create }}"
+      },
+      "type": "@mephistojb/n8n-nodes-paperless.paperless",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        464
+      ],
+      "id": "39ec1571-0962-448d-a14c-9a926bf2b74f",
+      "name": "Create a new correspondent",
+      "alwaysOutputData": true,
+      "credentials": {
+        "paperlessApi": {
+          "id": "HcMXTEu3nXsVbbHx",
+          "name": "Paperless-ngx account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "http://paperless:8000/api/tags/?page_size=500",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2080,
+        256
+      ],
+      "id": "7e9b39a1-ab52-406b-82c6-0736ed019071",
+      "name": "List all tags",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "rVc6bhO8VItBSOFU",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "http://paperless:8000/api/document_types/?page_size=500",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1856,
+        256
+      ],
+      "id": "3d4472e1-8466-4a5e-b141-14ab6e9bc83f",
+      "name": "List all types",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "rVc6bhO8VItBSOFU",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "http://paperless:8000/api/correspondents/?page_size=500",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1632,
+        256
+      ],
+      "id": "97ce4db5-429e-4853-ac7d-6083ae037e7d",
+      "name": "List all correspondents",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "rVc6bhO8VItBSOFU",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "tag",
+        "operation": "create",
+        "name": "={{ $json.tags_to_create }}"
+      },
+      "type": "@mephistojb/n8n-nodes-paperless.paperless",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        -112
+      ],
+      "id": "6c220410-4d54-4c1f-9ba2-2ab99750ca75",
+      "name": "Create a new tag",
+      "alwaysOutputData": true,
+      "credentials": {
+        "paperlessApi": {
+          "id": "HcMXTEu3nXsVbbHx",
+          "name": "Paperless-ngx account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "tags_to_create",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        -32
+      ],
+      "id": "1be4f918-89ad-4b80-b983-122ab38a3d69",
+      "name": "Split new tags"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "type_to_create",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        256
+      ],
+      "id": "eb2c5d1e-7630-4829-8591-dcbb7688e1ef",
+      "name": "Split new types",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "correspondent_to_create",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        544
+      ],
+      "id": "23cfc059-d4d5-4bed-a232-b4a9f1ee69cd",
+      "name": "Split new correspondent",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "let tags = $('Map').first().json.matched_tag_ids || [];\n\nfor (const item of $input.all()) {\n  // Check if the item has a 'results' array\n  if (item.json.results && Array.isArray(item.json.results)) {\n    for (const res of item.json.results) {\n      if (res.id) {\n        tags.push(res.id);\n      }\n    }\n  } \n  else if (item.json.id) {\n    tags.push(item.json.id);\n  }\n}\n\nlet uniqueTags = [...new Set(tags)].filter(Boolean);\n\nreturn [{\n  json: {\n    updated_tag_id: uniqueTags\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        -32
+      ],
+      "id": "e8f7dd43-39e9-40cb-9d7b-4eab8f313f34",
+      "name": "tag ids"
+    },
+    {
+      "parameters": {
+        "jsCode": "let tags = $('Map').first().json.matched_type_ids || [];\n\nfor (const item of $input.all()) {\n  if (item.json.results && Array.isArray(item.json.results)) {\n    for (const res of item.json.results) {\n      if (res.id) {\n        tags.push(res.id);\n      }\n    }\n  } \n  else if (item.json.id) {\n    tags.push(item.json.id);\n  }\n}\n\nlet uniqueTags = [...new Set(tags)].filter(Boolean);\n\nreturn [{\n  json: {\n    updated_type_id: uniqueTags\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        256
+      ],
+      "id": "63aa5f08-0f7d-4a54-a76f-649b93051860",
+      "name": "type id"
+    },
+    {
+      "parameters": {
+        "jsCode": "let tags = $('Map').first().json.matched_correspondent_ids || [];\n\nfor (const item of $input.all()) {\n  if (item.json.results && Array.isArray(item.json.results)) {\n    for (const res of item.json.results) {\n      if (res.id) {\n        tags.push(res.id);\n      }\n    }\n  } \n  else if (item.json.id) {\n    tags.push(item.json.id);\n  }\n}\n\nlet uniqueTags = [...new Set(tags)].filter(Boolean);\n\nreturn [{\n  json: {\n    updated_correspondent_id: uniqueTags\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        544
+      ],
+      "id": "fc9475d1-49cc-457f-b682-89729cce1f26",
+      "name": "correspondent id"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "id": {
+          "__rl": true,
+          "value": "={{ $('Map').item.json.id }}",
+          "mode": "id"
+        },
+        "update_fields": {
+          "correspondent": {
+            "__rl": true,
+            "value": "={{ $json.correspondent }}",
+            "mode": "id"
+          },
+          "created": "={{ $('Map').item.json.document_date }}",
+          "document_type": {
+            "__rl": true,
+            "value": "={{ $json.type }}",
+            "mode": "id"
+          },
+          "tags_json": "={{ $json.tags }}",
+          "title": "={{ $('Map').item.json.title }}"
+        }
+      },
+      "type": "@mephistojb/n8n-nodes-paperless.paperless",
+      "typeVersion": 2,
+      "position": [
+        160,
+        256
+      ],
+      "id": "896018a0-477f-4b5f-a6b6-0b7dc857b53c",
+      "name": "update document",
+      "credentials": {
+        "paperlessApi": {
+          "id": "HcMXTEu3nXsVbbHx",
+          "name": "Paperless-ngx account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Find the specific items that contain each piece of data\nconst typeItem = $input.all().find(item => item.json.updated_type_id);\nconst correspondentItem = $input.all().find(item => item.json.updated_correspondent_id);\nconst tagItem = $input.all().find(item => item.json.updated_tag_id);\n\nreturn [{\n  json: {\n    id: $('Map').first().json.id,\n    title: $('Map').first().json.title,\n    document_date: $('Map').first().json.document_date,\n    type: typeItem ? typeItem.json.updated_type_id[0] : null,\n    correspondent: correspondentItem ? correspondentItem.json.updated_correspondent_id[0] : null,\n    tags: tagItem ? tagItem.json.updated_tag_id : []\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        256
+      ],
+      "id": "f4633128-a3f4-466a-b924-d89cf7b6cc1f",
+      "name": "document data"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -288,
+        240
+      ],
+      "id": "736f8143-acc6-44a3-a933-022c198ee01d",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "525c08cd-f72c-4a29-bb97-282b73694718",
+              "leftValue": "={{ $json.tags_to_create.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -960,
+        -32
+      ],
+      "id": "6216909b-bfd6-4d26-be59-a8ea1ee3b502",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f80b29e8-0c0b-4f56-9fc4-0f43c390f26d",
+              "leftValue": "={{ $('Map').item.json.type_to_create.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -960,
+        256
+      ],
+      "id": "dd0b4984-b0e3-4007-b73e-d8a7785f48e9",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f87bfcd1-6b95-4450-8d94-44839c3dbe2b",
+              "leftValue": "={{ $('Map').item.json.correspondent_to_create.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -960,
+        544
+      ],
+      "id": "740abee9-c670-4bc4-85cd-9413839e6127",
+      "name": "If2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Id": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Document content": {
+      "main": [
+        [
+          {
+            "node": "json string to json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "json string to json": {
+      "main": [
+        [
+          {
+            "node": "List all tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map": {
+      "main": [
+        [
+          {
+            "node": "Split new tags",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split new types",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split new correspondent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a document": {
+      "main": [
+        [
+          {
+            "node": "Process Document content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a new type": {
+      "main": [
+        [
+          {
+            "node": "type id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a new correspondent": {
+      "main": [
+        [
+          {
+            "node": "correspondent id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List all tags": {
+      "main": [
+        [
+          {
+            "node": "List all types",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List all types": {
+      "main": [
+        [
+          {
+            "node": "List all correspondents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List all correspondents": {
+      "main": [
+        [
+          {
+            "node": "Map",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a new tag": {
+      "main": [
+        [
+          {
+            "node": "tag ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split new tags": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split new types": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split new correspondent": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tag ids": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "type id": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "correspondent id": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "document data": {
+      "main": [
+        [
+          {
+            "node": "update document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "document data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a new tag",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "tag ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Create a new type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "type id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Create a new correspondent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "correspondent id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "72989746-2faf-41a3-960c-64221fa8e0d4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a9c81934ae1ab9335827af87b97b98d6f85cdbc8462f6d48d51dfdc00004e1a1"
+  },
+  "nodeGroups": [],
+  "id": "9NjJaVqqAOh4PdDq",
+  "tags": []
+}
